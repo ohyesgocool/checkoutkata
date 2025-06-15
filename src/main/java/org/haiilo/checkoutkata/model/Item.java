@@ -1,16 +1,18 @@
 package org.haiilo.checkoutkata.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
 @Data
 public class Item {
     @Id
-    private String name;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "item_name")
+    private String itemName;
+
     @Column(name = "unit_price")
     private int unitPrice;
 }
