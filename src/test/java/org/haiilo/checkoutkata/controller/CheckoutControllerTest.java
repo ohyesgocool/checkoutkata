@@ -1,5 +1,6 @@
 package org.haiilo.checkoutkata.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.haiilo.checkoutkata.dto.CheckoutRequest;
 import org.haiilo.checkoutkata.service.CheckoutService;
 import org.junit.jupiter.api.Test;
@@ -18,8 +19,6 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(CheckoutController.class)
 class CheckoutControllerTest {
@@ -31,30 +30,34 @@ class CheckoutControllerTest {
     private CheckoutService checkoutService;
 
     @Autowired
-    private ObjectMapper objectMapper;  // For JSON serialization
+    private ObjectMapper objectMapper;
 
     @Test
     void calculateTotal_returnsOkWithTotal() throws Exception {
+        // Given: a checkout request with a list of items
         CheckoutRequest request = new CheckoutRequest();
         request.setItems(List.of("apple", "banana", "apple"));
 
-        // Mock service call to return 130
+        // And: the service returns a total of 130
         Mockito.when(checkoutService.calculateTotal(request.getItems())).thenReturn(130);
 
+        // When: the controller receives a POST request to calculate total
+        // Then: it returns HTTP 200 OK with the correct total
         mockMvc.perform(post("/v1/checkout/total")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(content().string("130"));
+                .andExpect(jsonPath("$.total").value(130));
     }
 
     @Test
-    void calculateTotal_withEmptyItems_returnsOkWithZero() throws Exception {
+    void calculateTotal_withEmptyItems_returnsBadRequest() throws Exception {
+        // Given: a checkout request with an empty list of items
         CheckoutRequest request = new CheckoutRequest();
         request.setItems(List.of());
 
-        Mockito.when(checkoutService.calculateTotal(request.getItems())).thenReturn(0);
-
+        // When: the controller receives a POST request
+        // Then: it returns HTTP 400 Bad Request
         mockMvc.perform(post("/v1/checkout/total")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -63,9 +66,11 @@ class CheckoutControllerTest {
 
     @Test
     void calculateTotal_missingItemsField_returnsBadRequest() throws Exception {
-        // Send empty JSON without 'items'
+        // Given: a JSON payload missing the 'items' field
         String invalidJson = "{}";
 
+        // When: the controller receives the malformed request
+        // Then: it returns HTTP 400 Bad Request
         mockMvc.perform(post("/v1/checkout/total")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJson))
@@ -74,12 +79,16 @@ class CheckoutControllerTest {
 
     @Test
     void calculateTotal_serviceThrowsException_returnsInternalServerError() throws Exception {
+        // Given: a valid checkout request
         CheckoutRequest request = new CheckoutRequest();
         request.setItems(List.of("apple"));
 
+        // And: the service throws a runtime exception
         Mockito.when(checkoutService.calculateTotal(anyList()))
                 .thenThrow(new RuntimeException("Something went wrong"));
 
+        // When: the controller receives the request
+        // Then: it returns HTTP 500 Internal Server Error
         mockMvc.perform(post("/v1/checkout/total")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

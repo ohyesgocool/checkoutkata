@@ -2,6 +2,7 @@ package org.haiilo.checkoutkata.controller;
 
 import jakarta.validation.Valid;
 import org.haiilo.checkoutkata.dto.CheckoutRequest;
+import org.haiilo.checkoutkata.dto.CheckoutResponse;
 import org.haiilo.checkoutkata.service.CheckoutService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +19,8 @@ public class CheckoutController {
     private CheckoutService checkoutService;
 
     @PostMapping("/total")
-    public ResponseEntity<Integer> calculateTotal(@Valid @RequestBody CheckoutRequest request) {
+    public CheckoutResponse calculateTotal(@Valid @RequestBody CheckoutRequest request) {
         int total = checkoutService.calculateTotal(request.getItems());
-        return ResponseEntity.ok(total);
+        return new CheckoutResponse(total);
     }
 }
